@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author TODO: AndyYang
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -109,11 +109,47 @@ public class Model extends Observable {
     public boolean tilt(Side side) {
         boolean changed;
         changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+        // 1.切换视角
+        board.setViewingPerspective(side);
+        // 2.遍历每一列
+        int size = board.size();
+        for (int col = 0; col < size; col++) {
+            boolean[] rowMerged = new boolean[size];
+            // 3. 次顶行从上往下处理一直到第0行
+            for (int row = (size-2); row >= 0; row--) {
+                Tile t =  board.tile(col, row);
+                // 4.1测试上方是否有空位
+                if (t != null) {
+                    int target_row = row;
+                    for (int test_row = (row+1); test_row < size; test_row++) {
+                        Tile next_t =  board.tile(col, test_row);
+                        // 4.2 有空位就把target定下来
+                        if (next_t == null) {target_row = test_row;}
+                        // 4.3 检查合并
+                        else if (next_t.value() == t.value() && !rowMerged[test_row]) {
+                            target_row = test_row;
+                            break;
+                        // 4.4 没空位就跳过
+                        } else {break;}
+                    }
+                    // 5.1 看target_row是否变化
+                    if (target_row != row) {
+                        // 5.2 合并的情况：累加分数
+                        if (board.move(col, target_row, t)) {
+                            score += board.tile(col, target_row).value();
+                            rowMerged[target_row] = true;
+                        }
+                        changed = true;
+                    }
+                }
+            }
+        }
+        // 6. 处理完毕，必须把视角切换回北方（初始状态）
+        board.setViewingPerspective(Side.NORTH);
         checkGameOver();
         if (changed) {
             setChanged();
@@ -138,6 +174,13 @@ public class Model extends Observable {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i,j) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +191,13 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        for (int col = 0; col < b.size(); col++) {
+            for (int row = 0; row < b.size(); row++) {
+                if (b.tile(col,row) != null && b.tile(col,row).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +209,32 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+        for (int col = 0; col < b.size(); col++) {
+            for (int row = 0; row < b.size(); row++) {
+                Tile t = b.tile(col,row);
+
+                // 调试信息
+                System.out.println("Checking col: " + col + " row: " + row + " Tile is: " + t);
+                // 1.检查自己
+                if (t == null) {return  true;}
+
+                // 2.检查右侧
+                if ((col+1) < b.size()) {
+                    Tile right = b.tile((col+1),row);
+                    if (right != null && t.value() == right.value()) {
+                        return true;
+                    }
+                }
+
+                // 3.检查上侧
+                if ((row+1) < b.size()) {
+                    Tile up = b.tile(col,(row+1));
+                    if (up != null && t.value() == up.value()) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
