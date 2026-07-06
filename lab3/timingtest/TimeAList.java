@@ -41,5 +41,6 @@ public class TimeAList {
             times.addLast(time);
             opCounts.addLast(N);
         }
+        // printTimingTable(Ns, times, opCounts);
     }
 }
