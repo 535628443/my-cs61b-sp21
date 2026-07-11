@@ -19,31 +19,26 @@ public class LinkedListDeque<T> implements Deque<T>{
     // 无参构造方法：初始化一个空的双向链表
     public LinkedListDeque() {
         this.sentinel = new Node<>(null, null, null);
+        this.sentinel.next = sentinel; // 闭环：next指向自己
+        this.sentinel.prev = sentinel; // 闭环：prev指向自己
         this.size = 0;
-    }
-
-    // 带参构造方法：初始化时就放入一个元素
-    public LinkedListDeque(T x) {
-        this.sentinel = new Node<>(null, null, null);
-        this.sentinel.next = new Node<>(x, this.sentinel, null);
-        this.size = 1;
     }
 
     @Override
     public void addFirst(T item) {
         // TODO: 实现添加元素到队首
-        sentinel.next = new Node<>(item, sentinel, sentinel.next);
+        Node<T> p = new Node<>(item, sentinel, sentinel.next);
+        sentinel.next.prev = p;
+        sentinel.next = p;
         size += 1;
     }
 
     @Override
     public void addLast(T item) {
         // TODO: 实现添加元素到队尾
-        Node<T> p = sentinel;
-        while (p.next != null) {
-            p = p.next;
-        }
-        p.next = new Node<>(item, p, null);
+        Node<T> p = new Node<>(item, sentinel.prev, sentinel);
+        sentinel.prev.next = p;
+        sentinel.prev = p;
         size += 1;
     }
 
@@ -104,5 +99,21 @@ public class LinkedListDeque<T> implements Deque<T>{
             }
         }
         return p.item;
+    }
+
+    public T getRecursive(int index) {
+        if (index < 1 || index > size) {
+            return null;
+        } else {
+            return getRecursiveHelper(sentinel.next, index-1);
+        }
+    }
+
+    private T getRecursiveHelper (Node<T> p, int index) {
+        if (index == 0) {
+            return p.item;
+        }else {
+            return getRecursiveHelper(p.next, index-1);
+        }
     }
 }
