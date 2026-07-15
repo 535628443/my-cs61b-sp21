@@ -1,0 +1,127 @@
+package deque;
+
+import java.util.Iterator;
+
+public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
+    private T[] items;
+    private int size;
+    private int nextFirst;
+    private int nextLast;
+
+    public ArrayDeque() {
+        items = (T[]) new Object[8];
+        size = 0;
+        nextFirst = 4;
+        nextLast = 5;
+    }
+
+    @Override
+    public void addFirst(T item) {
+        // TODO: 实现添加元素到队首
+        if (size == items.length) {
+            resize(items.length * 2);
+        }
+        items[nextFirst] = item;
+        nextFirst = (nextFirst - 1 + items.length) % items.length;
+        size += 1;
+    }
+
+    @Override
+    public void addLast(T item) {
+        // TODO: 实现添加元素到队尾
+        if (size == items.length) {
+            resize(items.length * 2);
+        }
+        items[nextLast] = item;
+        nextLast = (nextLast + 1) % items.length;
+        size += 1;
+    }
+
+    @Override
+    public int size() {
+        // TODO: 返回队列中的元素个数
+        return size;
+    }
+
+    @Override
+    public void printDeque() {
+        // TODO: 打印队列中的元素
+        for (int i = 0; i < items.length; i++) {
+            System.out.print(items[i] + " ");
+        }
+    }
+
+    @Override
+    public T removeFirst() {
+        // TODO: 移除并返回队首元素
+        if (size == 0) {
+            return null;
+        }
+        int p = (nextFirst + 1) % items.length;
+        T x = items[p];
+        items[p] = null;
+        nextFirst = p;
+        size -= 1;
+        if (items.length >= 16 && size < items.length / 4) {
+            resize(items.length / 2);
+        }
+        return x;
+    }
+
+    @Override
+    public T removeLast() {
+        // TODO: 移除并返回队尾元素
+        if (size == 0) {
+            return null;
+        }
+        int p = (nextLast - 1 + items.length) % items.length;
+        T x = items[p];
+        items[p] = null;
+        nextLast = p;
+        size -= 1;
+        if (items.length >= 16 && size < items.length / 4) {
+            resize(items.length / 2);
+        }
+        return x;
+    }
+
+    @Override
+    public T get(int index) {
+        // TODO: 获取指定索引位置的元素
+        if (index < 0 || index >= size) {
+            return null;
+        }
+        return items[(nextFirst + 1 + index) % items.length];
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T> {
+        private int pos = 0; // 记录当前遍历到了队列的第几个元素（0 开始）
+
+        @Override
+        public boolean hasNext() {
+            return pos < size; // 只要遍历的数量小于队列的实际大小，就说明还有元素
+        }
+
+        @Override
+        public T next() {
+            T item = get(pos); // 利用已有的 get 方法，不用重新写循环数组的逻辑！
+            pos++;
+            return item;
+        }
+    }
+
+    private void resize(int capacity) {
+        T[] newArray = (T[]) new Object[capacity];
+        for (int i = 0; i < size; i++) {
+            newArray[i] = items[(nextFirst + 1 + i) % items.length];
+        }
+        items = newArray;
+        nextFirst = capacity - 1;
+        nextLast = size;
+    }
+}
