@@ -125,4 +125,27 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         nextFirst = capacity - 1;
         nextLast = size;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        // 检查 o 是否实现了 Deque 接口
+        if (!(o instanceof Deque)) {
+            return false;
+        }
+        Deque<?> other = (Deque<?>) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.size(); i++) {
+            // 比较对应位置的元素是否相等
+            if (!this.get(i).equals(other.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
+

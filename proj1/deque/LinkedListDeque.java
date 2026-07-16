@@ -1,6 +1,8 @@
 package deque;
 
-public class LinkedListDeque<T> implements Deque<T>{
+import java.util.Iterator;
+
+public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
     private static class Node<T> {
         T item;
         Node<T> prev;
@@ -111,6 +113,53 @@ public class LinkedListDeque<T> implements Deque<T>{
             return p.item;
         }else {
             return getRecursiveHelper(p.next, index-1);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        // 检查 o 是否实现了 Deque 接口
+        if (!(o instanceof Deque)) {
+            return false;
+        }
+        Deque<?> other = (Deque<?>) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.size(); i++) {
+            // 比较对应位置的元素是否相等
+            if (!this.get(i).equals(other.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new LinkedListDequeIterator();
+    }
+
+    private class LinkedListDequeIterator implements Iterator<T> {
+        private Node<T> curr;
+
+        LinkedListDequeIterator() {
+            curr = sentinel.next; // 从第一个真实元素开始
+        }
+
+        @Override
+        public boolean hasNext() {
+            return curr != sentinel; // 当指针绕回到 sentinel 时，迭代结束
+        }
+
+        @Override
+        public T next() {
+            T item = curr.item;
+            curr = curr.next; // 指针后移
+            return item;
         }
     }
 }
