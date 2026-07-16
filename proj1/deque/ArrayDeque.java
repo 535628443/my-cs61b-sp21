@@ -46,9 +46,10 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     @Override
     public void printDeque() {
         // TODO: 打印队列中的元素
-        for (int i = 0; i < items.length; i++) {
-            System.out.print(items[i] + " ");
+        for (int i = 0; i < size; i++) {
+            System.out.print(get(i) + " ");
         }
+        System.out.println();
     }
 
     @Override
