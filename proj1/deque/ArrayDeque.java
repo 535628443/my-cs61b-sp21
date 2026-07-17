@@ -125,4 +125,24 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
         nextFirst = capacity - 1;
         nextLast = size;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Deque)) {
+            return false;
+        }
+        Deque<?> other = (Deque<?>) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+        for (int i = 0; i < this.size(); i++) {
+            if (!this.get(i).equals(other.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
