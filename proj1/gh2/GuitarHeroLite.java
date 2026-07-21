@@ -10,6 +10,8 @@ public class GuitarHeroLite {
     public static final double CONCERT_C = CONCERT_A * Math.pow(2, 3.0 / 12.0);
 
     public static void main(String[] args) {
+        StdDraw.text(0.5, 0.5, "Press 'a' or 'c'");
+
         /* create two guitar strings, for concert A and C */
         GuitarString stringA = new GuitarString(CONCERT_A);
         GuitarString stringC = new GuitarString(CONCERT_C);
