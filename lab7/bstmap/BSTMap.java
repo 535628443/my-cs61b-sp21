@@ -1,5 +1,6 @@
 package bstmap;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -28,17 +29,17 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
 
     // 辅助函数
-    private BSTNode get(BSTNode node, K key) {
-        if (node == null) {
+    private BSTNode get(BSTNode n, K key) {
+        if (n == null) {
             return null;
         }
-        int cmp = key.compareTo(node.key);
+        int cmp = key.compareTo(n.key);
         if (cmp < 0) {
-            return get(node.left, key);
+            return get(n.left, key);
         } else if (cmp > 0) {
-            return get(node.right, key);
+            return get(n.right, key);
         } else {
-            return node;
+            return n;
         }
     }
 
@@ -58,6 +59,19 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         }
         return n;
     }
+
+    private void keySet (BSTNode n, Set<K> set) {
+        if (n == null) {
+            return;
+        }
+        // 中序遍历(左->中->右)
+        // 改成 先/后 序遍历 只需要下列三行换位置即可
+        keySet(n.left, set);
+        set.add(n.key);
+        keySet(n.right, set);
+    }
+
+
 
     // 接口实现
     @Override
@@ -93,7 +107,9 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        Set<K> set = new HashSet<>();
+        keySet(root, set);
+        return set;
     }
     @Override
     public V remove(K key) {
