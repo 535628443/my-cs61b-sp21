@@ -17,7 +17,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public void addFirst(T item) {
-        // TODO: 实现添加元素到队首
         if (size == items.length) {
             resize(items.length * 2);
         }
@@ -28,7 +27,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public void addLast(T item) {
-        // TODO: 实现添加元素到队尾
         if (size == items.length) {
             resize(items.length * 2);
         }
@@ -39,13 +37,11 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public int size() {
-        // TODO: 返回队列中的元素个数
         return size;
     }
 
     @Override
     public void printDeque() {
-        // TODO: 打印队列中的元素
         for (int i = 0; i < size; i++) {
             System.out.print(get(i) + " ");
         }
@@ -54,7 +50,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public T removeFirst() {
-        // TODO: 移除并返回队首元素
         if (size == 0) {
             return null;
         }
@@ -71,7 +66,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public T removeLast() {
-        // TODO: 移除并返回队尾元素
         if (size == 0) {
             return null;
         }
@@ -88,7 +82,6 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
 
     @Override
     public T get(int index) {
-        // TODO: 获取指定索引位置的元素
         if (index < 0 || index >= size) {
             return null;
         }
