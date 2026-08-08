@@ -109,6 +109,15 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         return findMinNode(n.left);
     }
 
+    private void printInOrder(BSTNode node) {
+        if (node == null) {
+            return;
+        }
+        printInOrder(node.left);
+        System.out.println(node.key + " " + node.value);
+        printInOrder(node.right);
+    }
+
     // 接口实现
     @Override
     public void clear() {
@@ -171,6 +180,11 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     @Override
     public Iterator<K> iterator() {
         return keySet().iterator();
+    }
+
+    // 打印函数
+    public void printInOrder() {
+        printInOrder(root);
     }
 
 }
