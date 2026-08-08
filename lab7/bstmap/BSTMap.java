@@ -71,7 +71,43 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         keySet(n.right, set);
     }
 
+    private BSTNode remove (BSTNode n, K key) { // 返回的是 一个新节点(替代了被删除的节点)
+        // 叶子节点
+        if (n == null) {
+            return null;
+        }
 
+        int cmp = key.compareTo(n.key); // 往下遍历
+        if (cmp > 0) {
+            n.right = remove(n.right, key);
+        } else if (cmp < 0) {
+            n.left = remove(n.left, key);
+        } else {
+
+            // 有 0/1 个孩子 (用 孩子 替代 被删除的节点)
+            if (n.right == null) { // 相当于把 孩子 返回 顶替 n 原来的位置
+                return n.left;
+            } else if (n.left == null) {
+                return n.right;
+            }
+
+            // 有 2 个孩子 (用 右子树下最小的节点 替代 被删除的节点)
+            BSTNode miniNode = findMinNode(n.right);
+            n.key = miniNode.key;
+            n.value = miniNode.value;
+
+            // 把 n 右子树下的最小节点删除掉
+            n.right = remove (n.right, miniNode.key);
+        }
+        return n;
+    }
+
+    private BSTNode findMinNode (BSTNode n) {
+        if (n.left == null) {
+            return n;
+        }
+        return findMinNode(n.left);
+    }
 
     // 接口实现
     @Override
@@ -113,7 +149,12 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        if (!containsKey(key)) {
+            return null;
+        }
+        V val = get(key);
+        root = remove(root, key);
+        return val;
     }
     @Override
     public V remove(K key, V value) {
