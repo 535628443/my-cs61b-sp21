@@ -154,11 +154,19 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         }
         V val = get(key);
         root = remove(root, key);
+        size--;
         return val;
     }
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        if (containsKey(key) && get(key).equals(value)) {
+            root = remove(root, key);
+            size--;
+            return value;
+        } else {
+            return null;
+        }
+
     }
     @Override
     public Iterator<K> iterator() {
