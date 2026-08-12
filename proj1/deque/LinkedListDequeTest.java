@@ -122,4 +122,23 @@ public class LinkedListDequeTest {
             assertEquals("Should have the same value", i, (double) lld1.removeLast(), 0.0);
         }
     }
+
+    @Test
+    public void equalsTest() {
+        LinkedListDeque<Integer> lld1 = new LinkedListDeque<>();
+        LinkedListDeque<Integer> lld2 = new LinkedListDeque<>();
+
+        lld1.addLast(10);
+        lld1.addLast(20);
+
+        lld2.addLast(10);
+        lld2.addLast(20);
+
+        // 验证两个包含了相同元素的 LinkedListDeque 是否相等
+        assertTrue(lld1.equals(lld2));
+
+        lld2.addLast(30);
+        // 长度不一样，应该不相等
+        assertFalse(lld1.equals(lld2));
+    }
 }

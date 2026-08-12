@@ -133,4 +133,33 @@ public class LinkedListDeque<T> implements Deque<T>, Iterable<T> {
             return item;
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        // 查地址
+        if (this == o) {
+            return true;
+        }
+
+        // 查类型
+        if (!(o instanceof Deque)) {
+            return false;
+        }
+
+        // 对比 size (需要把 Objective 先转化成 Deque 才能调用.size())
+        Deque<?> other = (Deque<?>) o;
+        if (this.size() != other.size()) {
+            return false;
+        }
+
+        /* 前三个查找方法时间复杂度很低，可以加快运行速度 */
+
+        // 对比元素
+        for (int i = 0; i < this.size(); i++) {
+            if (!this.get(i).equals(other.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
