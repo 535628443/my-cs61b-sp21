@@ -8,7 +8,7 @@ public class ArrayDeque<T> implements Deque<T>, Iterable<T> {
     private int nextFirst;
     private int nextLast;
 
-    public ArrayDeque() {
+    public ArrayDeque() { // 下列参数前可以加 this
         items = (T[]) new Object[8];
         size = 0;
         nextFirst = 4;
