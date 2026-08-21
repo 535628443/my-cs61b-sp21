@@ -26,8 +26,8 @@ public class TestArrayDequeEC {
 
             } else if (op == 1) {
                 message += "addLast(" + randVal + ")\n";
-                sad1.addFirst(randVal);
-                ads1.addFirst(randVal);
+                sad1.addLast(randVal);
+                ads1.addLast(randVal);
 
             } else if (op == 2) {
                 if (ads1.size() > 0 ) {
