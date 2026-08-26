@@ -118,4 +118,36 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         }
         this.size = 0;
     }
+
+    @Override
+    public boolean containsKey(K key) {
+        return getNode(key) != null;
+    }
+
+    @Override
+    public V get(K key) {
+        Node node = getNode(key);
+        if(node == null){
+            return null;
+        }
+        return node.value;
+    }
+
+    // 辅助函数
+    private int getIndex(K key) {
+        return Math.floorMod(key.hashCode(), buckets.length);
+    }
+
+    private Node getNode(K key) {
+        int index = getIndex(key);
+        Collection<Node> bucket = buckets[index];
+        if (bucket != null) {
+            for (Node node : bucket) {
+                if (node.key.equals(key)) {
+                    return node;
+                }
+            }
+        }
+        return null;
+    }
 }
