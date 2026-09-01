@@ -2,6 +2,9 @@ package hashmap;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  *  A hash table-backed Map implementation. Provides amortized constant time
@@ -133,6 +136,30 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         return node.value;
     }
 
+    @Override
+    public void put(K key, V value) {
+        // key 存在 -> 直接替代
+        Node node = getNode(key);
+        if (node != null) {
+            node.value = value;
+            return;
+        }
+
+        // key 不存在 -> 直接创建
+        Node newNode = createNode(key, value);
+        int index = getIndex(key);
+        buckets[index].add(newNode);
+        size++;
+
+        // 判断是否扩容
+        double loadFactor = (double) size / buckets.length;
+        if (loadFactor > maxLoad) {
+            resize(buckets.length * 2);
+        }
+    }
+
+
+
     // 辅助函数
     private int getIndex(K key) {
         return Math.floorMod(key.hashCode(), buckets.length);
@@ -149,5 +176,21 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             }
         }
         return null;
+    }
+
+    private void resize(int capacity) {
+        Collection<Node>[] newBuckets = createTable(capacity);
+        for (int i = 0; i < capacity; i++) {
+            newBuckets[i] = createBucket();
+        }
+
+        for (Collection<Node> bucket : buckets) {
+            for (Node node : bucket) {
+                int newIndex = Math.floorMod(node.key.hashCode(), capacity);
+                newBuckets[newIndex].add(node);
+            }
+        }
+
+        this.buckets = newBuckets;
     }
 }
