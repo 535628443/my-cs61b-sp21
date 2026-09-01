@@ -158,7 +158,31 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
         }
     }
 
+    @Override
+    public Set<K> keySet() {
+        HashSet<K> set = new HashSet<>();
+        for (Collection<Node> bucket : buckets) {
+            for (Node node : bucket) {
+                set.add(node.key);
+            }
+        }
+        return set;
+    }
 
+    @Override
+    public V remove(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public V remove(K key, V value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+         return keySet().iterator();
+    }
 
     // 辅助函数
     private int getIndex(K key) {
