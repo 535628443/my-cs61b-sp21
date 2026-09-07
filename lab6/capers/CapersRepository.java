@@ -50,7 +50,7 @@ public class CapersRepository {
         if (storyFile.exists()) {
             story += readContentsAsString(storyFile);
         }
-        story = text + "/n";
+        story += text + "\n";
         writeContents(storyFile, story);
         System.out.print(story);
     }
