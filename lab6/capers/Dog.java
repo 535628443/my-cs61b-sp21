@@ -40,8 +40,9 @@ public class Dog implements Serializable{
      * @return Dog read from file
      */
     public static Dog fromFile(String name) {
-        // TODO (hint: look at the Utils file)
-        return null;
+        File dogFile = join(DOG_FOLDER, name);
+        return readObject(dogFile, Dog.class);
+        // Dog.class 告知了编译器: 读出来的是 Dog 对象
     }
 
     /**
