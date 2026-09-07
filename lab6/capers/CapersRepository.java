@@ -49,6 +49,7 @@ public class CapersRepository {
 
         if (storyFile.exists()) {
             story += readContentsAsString(storyFile);
+            // 如果.capers/story 存在，会把 story 读出来并覆盖前面创建的 story
         }
         story += text + "\n";
         writeContents(storyFile, story);
