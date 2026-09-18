@@ -239,6 +239,8 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 ### stage helper
    - `void stageForAddition(String fileName, String blobId)`
    - `void stageForRemoval(String fileName)`
+   - `Map<String, String> getAddedFiles()`
+   - `Set<String> getRemovedFiles()`
    - `void clear()`
    - `boolean isEmpty()`
    - `void save()`
@@ -256,22 +258,22 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 
 ```
 CWD/
-└── .gitlet/
-    ├── HEAD
-    ├── staging
-    │
-    ├── refs/
-    │   └── heads/
-    │       ├── master
-    │       └── dev
-    │
-    │
-    └── objects/
-        ├── commits/
-        │   ├── <commit-sha1>
-        │   └── ...
+ └── .gitlet/
+        ├── HEAD
+        ├── staging
         │
-        └── blobs/
-            ├── <blob-sha1>
-            └── ...
+        ├── refs/
+        │     └── heads/
+        │            ├── master
+        │            └── dev
+        │
+        │
+        └── objects/
+                ├── commits/
+                │       ├── <commit-sha1>
+                │       └── ...
+                │
+                └── blobs/
+                      ├── <blob-sha1>
+                      └── ...
 ```
