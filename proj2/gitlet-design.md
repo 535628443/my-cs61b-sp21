@@ -235,6 +235,13 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
    - `private static Commit readCommit(String commitId)`
    - `public String save()`: 把 commit obj 存到磁盘并返回对应 hash
    - `private static String resolveCommitId(String prefix)`
+   - `public String getSha1()`
+   - `public static Commit fromFile(String id)`: 反序列化 Commit 文件
+   - `public String getMessage()`
+   - `public Date getTimestamp()`
+   - `public String getParent()`
+   - `public String getSecondParent()`
+   - `public Map<String, String> getTrackedFiles()`
 
 ### stage helper
    - `void stageForAddition(String fileName, String blobId)`
