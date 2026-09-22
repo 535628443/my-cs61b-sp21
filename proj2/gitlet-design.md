@@ -260,6 +260,9 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 ### merge helper
    - `private static boolean hasUntrackedConflict(Commit target)`
 
+### Repository
+   - `public static void init()`
+
 
 ## Persistence
 
