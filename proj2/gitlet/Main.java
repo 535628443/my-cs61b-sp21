@@ -1,7 +1,7 @@
 package gitlet;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author TODO
+ *  @author Andy Yang
  */
 public class Main {
 
@@ -16,9 +16,18 @@ public class Main {
                 Repository.init();
                 break;
             case "add":
-                // TODO: handle the `add [filename]` command
+                validateNumArgs(args, 2);
+                Repository.add(args[1]);
                 break;
                 // TODO: FILL THE REST IN
+        }
+    }
+
+    private static void validateNumArgs(String[] args, int i) {
+        if (args.length != 2) {
+            System.out.println("Incorrect operands.");
+            // 直接退出程序
+            System.exit(0);
         }
     }
 }

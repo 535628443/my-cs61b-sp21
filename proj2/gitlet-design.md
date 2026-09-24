@@ -226,12 +226,12 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
      7. 清空 Stage
 
 
-## Helper Method
+## Method
    - `private static String getCurrentBranch()`
    - `private static String getHeadCommitId()`
    - `private static Commit getHeadCommit()`
 
-### Commit helper
+### Commit 
    - `private static Commit readCommit(String commitId)`
    - `public String save()`: 把 commit obj 存到磁盘并返回对应 hash
    - `private static String resolveCommitId(String prefix)`
@@ -243,7 +243,7 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
    - `public String getSecondParent()`
    - `public Map<String, String> getTrackedFiles()`
 
-### stage helper
+### stage 
    - `void stageForAddition(String fileName, String blobId)`
    - `void stageForRemoval(String fileName)`
    - `Map<String, String> getAddedFiles()`
@@ -253,16 +253,20 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
    - `void save()`
    - `static Stage load()`
 
-### checkout helper
+### checkout 
    - `private static void checkoutFile(Commit commit, String fileName)`
    - `private static void checkoutCommit(Commit current, Commit target)`
 
-### merge helper
+### merge 
    - `private static boolean hasUntrackedConflict(Commit target)`
 
-### Repository
+### Repository 
    - `public static void init()`
    - `public static void add(String fileName)`
+
+### Main
+   - `private static void validateNumArgs(String[] args, int i)`
+
 
 ## Persistence
 
