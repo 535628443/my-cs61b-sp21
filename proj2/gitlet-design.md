@@ -262,28 +262,31 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 
 ### Repository
    - `public static void init()`
-
+   - `public static void add(String fileName)`
 
 ## Persistence
 
 ```
 CWD/
- └── .gitlet/
-        ├── HEAD
-        ├── staging
-        │
-        ├── refs/
-        │     └── heads/
-        │            ├── master
-        │            └── dev
-        │
-        │
-        └── objects/
-                ├── commits/
-                │       ├── <commit-sha1>
-                │       └── ...
-                │
-                └── blobs/
-                      ├── <blob-sha1>
-                      └── ...
+ ├── .gitlet/
+ │       ├── HEAD
+ │       ├── staging
+ │       │
+ │       ├── refs/
+ │       │     └── heads/
+ │       │           ├── master
+ │       │           └── dev
+ │       │
+ │       └── objects/
+ │               ├── commits/
+ │               │       ├── <commit-sha1>
+ │               │       └── ...
+ │               │
+ │               └── blobs/
+ │                     ├── <blob-sha1>
+ │                     └── ...
+ │
+ ├── file1
+ ├── file2
+ └── ......(Working Dir 的其他文件)
 ```
