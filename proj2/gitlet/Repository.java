@@ -102,12 +102,54 @@ public class Repository {
     }
 
     /**
-     * 获取当前 HEAD 指向的 Commit 对象。
+     * 获取当前 HEAD 指向的 Commit 对象
      */
     private static Commit getHeadCommit() {
-        String id = getHeadCommitId();;
+        String id = getHeadCommitId();
         return Commit.fromFile(id);
     }
 
+    /**
+     *
+     * @param fileName
+     *
+     * 找working dir 的文件 (不存在就报错)
+     *
+     */
+    public static void add(String fileName) {
+        File file = Utils.join(CWD, fileName);
+        if(!file.exists()) {
+            System.out.println("File does not exist.");
+            return;
+        }
+
+        // fileName 的 sha1
+        byte[] contents = Utils.readContents(file);
+        String boldId = Utils.sha1(contents);
+
+        // HEAD 里 trackedFile 的 sha1
+        Commit head = getHeadCommit();
+        String trackedBoldId = head.getTrackedFiles().get(fileName);
+
+        Stage stage = Stage.load();
+
+        // 没有任何改动就直接清空暂存区中对应的文件
+        if (boldId.equals(trackedBoldId)) {
+            stage.getAddedFiles().remove(fileName);
+            stage.getRemovedFiles().remove(fileName);
+            stage.save();
+            return;
+        }
+
+        // 如果有存在改动
+        File blobFile = Utils.join(BLOBS_DIR, boldId);
+        if (!blobFile.exists()) {
+            Utils.writeContents(blobFile, contents);
+        }
+
+        // 更新暂存区的内容
+        stage.stageForAddition(fileName, boldId);
+        stage.save();
+    }
 
 }
