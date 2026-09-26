@@ -1,6 +1,10 @@
 package gitlet;
 
 import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import static gitlet.Utils.*;
 
 /*
@@ -152,4 +156,53 @@ public class Repository {
         stage.save();
     }
 
+    /**
+     *
+     * @param message
+     *
+     * 1. 检查 message 是否为空，检查暂存区是否有变更
+     * 2. 获取当前 HEAD Commit，克隆一份当前追踪文件表副本
+     * 3. 用暂存区数据更新副本（应用增加与删除）
+     * 4. 创建并保存新的 Commit 对象（parent 指向原 HEAD）
+     * 5. 更新当前分支文件指针指向新 Commit
+     * 6. 清空并保存暂存区
+     */
+    public static void commit(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            System.out.println("Please enter a commit message.");
+            return;
+        }
+
+        Stage stage = Stage.load();
+        if (stage.isEmpty()) {
+            System.out.println("No changes added to the commit.");
+            return;
+        }
+
+        String headId = getHeadCommitId();
+        Commit head = Commit.fromFile(headId);
+        // 新建一个当前 trackedFiles 的副本
+        Map<String, String> newTrackedFile = new HashMap<>(head.getTrackedFiles());
+        newTrackedFile.putAll(stage.getAddedFiles());
+        for(String file : stage.getRemovedFiles()) {
+            newTrackedFile.remove(file);
+        }
+
+        Commit newCommit = new Commit(
+                message,
+                // 默认传入当前时间
+                new Date(),
+                headId,
+                null,
+                newTrackedFile
+        );
+
+        String newCommitId = newCommit.save();
+        String currentBranch = getCurrentBranch();
+        File branchFile = Utils.join(HEADS_DIR, currentBranch);
+        Utils.writeContents(branchFile, newCommitId);
+
+        stage.clear();
+        stage.save();
+    }
 }
