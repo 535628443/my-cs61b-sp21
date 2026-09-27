@@ -1,5 +1,7 @@
 package gitlet;
 
+import jdk.jshell.execution.Util;
+
 import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,7 +45,9 @@ public class Repository {
      * variable is used. We've provided two examples for you.
      */
 
-    /** The current working directory. */
+    /**
+     * The current working directory.
+     */
     public static final File CWD = new File(System.getProperty("user.dir"));
     public static final File GITLET_DIR = Utils.join(CWD, ".gitlet");
 
@@ -81,7 +85,7 @@ public class Repository {
 
         Commit initial = new Commit();
         String id = initial.save();
-        File master = Utils.join(HEADS_DIR,"master");
+        File master = Utils.join(HEADS_DIR, "master");
 
         Utils.writeContents(master, id);
         Utils.writeContents(HEAD_FILE, "master");
@@ -115,14 +119,12 @@ public class Repository {
 
     /**
      *
-     * @param fileName
-     *
-     * 找working dir 的文件 (不存在就报错)
+     * @param fileName 找working dir 的文件 (不存在就报错)
      *
      */
     public static void add(String fileName) {
         File file = Utils.join(CWD, fileName);
-        if(!file.exists()) {
+        if (!file.exists()) {
             System.out.println("File does not exist.");
             return;
         }
@@ -158,14 +160,12 @@ public class Repository {
 
     /**
      *
-     * @param message
-     *
-     * 1. 检查 message 是否为空，检查暂存区是否有变更
-     * 2. 获取当前 HEAD Commit，克隆一份当前追踪文件表副本
-     * 3. 用暂存区数据更新副本（应用增加与删除）
-     * 4. 创建并保存新的 Commit 对象（parent 指向原 HEAD）
-     * 5. 更新当前分支文件指针指向新 Commit
-     * 6. 清空并保存暂存区
+     * @param message 1. 检查 message 是否为空，检查暂存区是否有变更
+     *                2. 获取当前 HEAD Commit，克隆一份当前追踪文件表副本
+     *                3. 用暂存区数据更新副本（应用增加与删除）
+     *                4. 创建并保存新的 Commit 对象（parent 指向原 HEAD）
+     *                5. 更新当前分支文件指针指向新 Commit
+     *                6. 清空并保存暂存区
      */
     public static void commit(String message) {
         if (message == null || message.trim().isEmpty()) {
@@ -184,7 +184,7 @@ public class Repository {
         // 新建一个当前 trackedFiles 的副本
         Map<String, String> newTrackedFile = new HashMap<>(head.getTrackedFiles());
         newTrackedFile.putAll(stage.getAddedFiles());
-        for(String file : stage.getRemovedFiles()) {
+        for (String file : stage.getRemovedFiles()) {
             newTrackedFile.remove(file);
         }
 
@@ -205,4 +205,54 @@ public class Repository {
         stage.clear();
         stage.save();
     }
+
+    /**
+     *
+     * @param fileName
+     *
+     * 1. 读取当前 Stage 和 HEAD Commit
+     * 2. 检查文件是否既未暂存（addedFiles 中没有）且未被当前 HEAD 追踪（trackedFiles 中没有）
+     *    - 若两者皆否，打印 "No reason to remove the file." 并退出
+     * 3. 若文件已在 addedFiles 中，将其从 addedFiles 移除（取消暂存）
+     * 4. 若文件被当前 HEAD 追踪：
+     *    - 将文件加入 removedFiles 标记为待删除
+     *    - 若工作目录中存在该文件，将其从工作目录中删除（使用 Utils.restrictedDelete）
+     * 5. 保存 Stage
+     */
+    public static void rm (String fileName) {
+        // 处理暂存区的文件
+        Stage stage = Stage.load();
+        boolean staged = stage.getAddedFiles().containsKey(fileName);
+
+        // 处理被追踪的文件
+        Commit head = getHeadCommit();
+        boolean tracked = head.getTrackedFiles().containsKey(fileName);
+
+        if (!staged && !tracked) {
+            System.out.println("No reason to remove the file.");
+            return;
+        }
+
+        // file 只 add 但是还没 commit 的情况(在暂存区, 但没被 tracked)
+        if (staged) {
+            stage.getAddedFiles().remove(fileName);
+        }
+
+        if (tracked) {
+            stage.stageForRemoval(fileName);
+            File file = Utils.join(CWD, fileName);
+            Utils.restrictedDelete(file);
+        }
+
+        stage.save();
+    }
 }
+
+// 测试
+/*
+    public static void main(String[] args) {
+        init();
+        add("wug.txt");
+        commit("added wug");
+    }
+ */
