@@ -3,8 +3,10 @@ package gitlet;
 import jdk.jshell.execution.Util;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import static gitlet.Utils.*;
@@ -92,29 +94,6 @@ public class Repository {
 
         Stage stage = new Stage();
         stage.save();
-    }
-
-    /**
-     * 获取当前 HEAD 所指向的分支名称（例如 "master"）。
-     */
-    private static String getCurrentBranch() {
-        return Utils.readContentsAsString(HEAD_FILE);
-    }
-
-    /**
-     * 获取当前分支 HEAD 提交的 SHA-1 哈希值。
-     */
-    private static String getHeadCommitId() {
-        String branch = getCurrentBranch();
-        return Utils.readContentsAsString(Utils.join(HEADS_DIR, branch));
-    }
-
-    /**
-     * 获取当前 HEAD 指向的 Commit 对象
-     */
-    private static Commit getHeadCommit() {
-        String id = getHeadCommitId();
-        return Commit.fromFile(id);
     }
 
     /**
@@ -246,9 +225,71 @@ public class Repository {
 
         stage.save();
     }
+
+    /**
+     *
+     */
+    public static void log() {
+        String commitId = getHeadCommitId();
+
+        // 循环到 init commit 就退出
+        while (commitId != null) {
+            Commit commit = Commit.fromFile(commitId);
+            printCommit(commit, commitId);
+            commitId = commit.getParent();
+        }
+    }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * 获取当前 HEAD 所指向的分支名称（例如 "master"）。
+     */
+    private static String getCurrentBranch() {
+        return Utils.readContentsAsString(HEAD_FILE);
+    }
+
+    /**
+     * 获取当前分支 HEAD 提交的 SHA-1 哈希值。
+     */
+    private static String getHeadCommitId() {
+        String branch = getCurrentBranch();
+        return Utils.readContentsAsString(Utils.join(HEADS_DIR, branch));
+    }
+
+    /**
+     * 获取当前 HEAD 指向的 Commit 对象
+     */
+    private static Commit getHeadCommit() {
+        String id = getHeadCommitId();
+        return Commit.fromFile(id);
+    }
+
+    /**
+     * 把 Commit 一个接一个全打印出来
+     */
+    private static void printCommit(Commit commit, String commitId) {
+        System.out.println("===");
+        System.out.println("commit " + commitId);
+
+        if (commit.getSecondParent() != null) {
+            String firstParent = commit.getParent().substring(0, 7);
+            String secondParent = commit.getSecondParent().substring(0,7);
+            System.out.println("Merge: " + firstParent + " " + secondParent);
+        }
+
+        SimpleDateFormat formatter = new SimpleDateFormat(
+                "EEE MMM d HH:mm:ss yyyy Z",
+                Locale.ENGLISH
+        );
+        System.out.println("Date: " + formatter.format(commit.getTimestamp()));
+
+        System.out.println(commit.getMessage());
+        System.out.println();
+    }
 }
 
-// 测试
+// ==================== temporal Testing ====================
 /*
     public static void main(String[] args) {
         init();

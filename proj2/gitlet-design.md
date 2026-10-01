@@ -227,9 +227,12 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 
 
 ## Method
+
+### Helper
    - `private static String getCurrentBranch()`
    - `private static String getHeadCommitId()`
    - `private static Commit getHeadCommit()`
+   - `private static void printCommit()`
 
 ### Commit 
    - `private static Commit readCommit(String commitId)`
@@ -263,6 +266,9 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 ### Repository 
    - `public static void init()`
    - `public static void add(String fileName)`
+   - `public static void commit(String message)`
+   - `public static void rm (String fileName)`
+   - `public static void log()`
 
 ### Main
    - `private static void validateNumArgs(String[] args, int i)`
