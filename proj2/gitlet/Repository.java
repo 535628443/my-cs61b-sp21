@@ -1,15 +1,8 @@
 package gitlet;
 
-import jdk.jshell.execution.Util;
-
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
-import static gitlet.Utils.*;
+import java.util.*;
 
 /*
 Repository
@@ -227,7 +220,7 @@ public class Repository {
     }
 
     /**
-     *
+     * 往前依次打印出所有的 Commit
      */
     public static void log() {
         String commitId = getHeadCommitId();
@@ -237,6 +230,36 @@ public class Repository {
             Commit commit = Commit.fromFile(commitId);
             printCommit(commit, commitId);
             commitId = commit.getParent();
+        }
+    }
+
+    /**
+     * 依次打印出所有的 Commit
+     */
+    public static void globalLog() {
+        List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+
+        for (String commitId : commitIds) {
+            Commit commit = Commit.fromFile(commitId);
+            printCommit(commit, commitId);
+        }
+    }
+
+    public static void find(String message) {
+        List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
+        boolean found = false;
+
+        for (String commitId : commitIds) {
+            Commit commit = Commit.fromFile(commitId);
+
+            if (commit.getMessage().equals(message)) {
+                found = true;
+                System.out.println(commitId);
+            }
+        }
+
+        if (!found) {
+            System.out.println("Found no commit with that message.");
         }
     }
 
@@ -266,7 +289,7 @@ public class Repository {
     }
 
     /**
-     * 把 Commit 一个接一个全打印出来
+     * 按规则打印出 Commit
      */
     private static void printCommit(Commit commit, String commitId) {
         System.out.println("===");
