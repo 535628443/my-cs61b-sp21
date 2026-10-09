@@ -271,6 +271,7 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
    - `public static void log()`
    - `public static void globalLog()`
    - `public static void find(String message)`
+   - `public static void status()`
 
 ### Main
    - `private static void validateNumArgs(String[] args, int i)`

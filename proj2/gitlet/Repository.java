@@ -263,6 +263,116 @@ public class Repository {
         }
     }
 
+    public static void status() {
+        // 1. Branches
+        List<String> branches = Utils.plainFilenamesIn(HEADS_DIR);
+        String currentBranch = getCurrentBranch();
+
+        System.out.println("=== Branches ===");
+
+        for (String branch : branches) {
+            if (branch.equals(currentBranch)) {
+                System.out.println("*" + branch);
+            } else {
+                System.out.println(branch);
+            }
+        }
+        System.out.println();
+
+        // 2. Staged Area(新增 / 修改)
+        Stage stage = Stage.load();
+
+        System.out.println("=== Staged Files ===");
+        List<String> stagedFiles = new ArrayList<>(stage.getAddedFiles().keySet());
+        Collections.sort(stagedFiles);
+        for (String fileName : stagedFiles) {
+            System.out.println(fileName);
+        }
+        System.out.println();
+
+        // 3. Removed Area
+        System.out.println("=== Removed Files ===");
+        List<String> removedFiles = new ArrayList<>(stage.getRemovedFiles());
+        Collections.sort(removedFiles);
+        for (String fileName : removedFiles) {
+            System.out.println(fileName);
+        }
+        System.out.println();
+
+        // 4. 文件修改后还未被 add / rm
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        Commit head = getHeadCommit();
+        Map<String, String> modifiedNotStaged = new HashMap<>();
+
+        // 4.1 HEAD 追踪但 workingDir 修改
+        for (String fileName : head.getTrackedFiles().keySet()) {
+            File file = Utils.join(CWD, fileName);
+            String headHash = head.getTrackedFiles().get(fileName);
+
+            if (file.exists()) {
+                String fileHash = Utils.sha1(Utils.readContents(file));
+                // 本地修改，但没有 add
+                if (!fileHash.equals(headHash) && !stage.getAddedFiles().containsKey(fileName)) {
+                    modifiedNotStaged.put(fileName, "(modified)");
+                }
+            } else {
+                // 本地被删除了，但没有执行过 rm
+                if (!stage.getRemovedFiles().contains(fileName)) {
+                    modifiedNotStaged.put(fileName, "(deleted)");
+                }
+            }
+        }
+
+        // 4.2 检查暂存区 addedFiles 中的文件
+        for (String fileName : stage.getAddedFiles().keySet()) {
+            File file = Utils.join(CWD, fileName);
+            String stageHash = stage.getAddedFiles().get(fileName);
+
+            if (file.exists()) {
+                String fileHash = Utils.sha1(Utils.readContents(file));
+                // 暂存后，本地又改动了
+                if (!fileHash.equals(stageHash)) {
+                    modifiedNotStaged.put(fileName, "(modified)");
+                }
+            } else {
+                // 暂存后，本地被删除了
+                modifiedNotStaged.put(fileName, "(deleted)");
+            }
+        }
+
+        // 排序并打印第 4 区块
+        List<String> sortedModified = new ArrayList<>(modifiedNotStaged.keySet());
+        Collections.sort(sortedModified);
+        for (String fileName : sortedModified) {
+            System.out.println(fileName + " " + modifiedNotStaged.get(fileName));
+        }
+        System.out.println();
+
+        // 5. Untracked Files
+        System.out.println("=== Untracked Files ===");
+        List<String> workingFiles = Utils.plainFilenamesIn(CWD);
+        List<String> untrackedFiles = new ArrayList<>();
+
+        if (workingFiles != null) {
+            for (String fileName : workingFiles) {
+                // 未追踪条件：不在 addedFiles 中，并且（不在 HEAD 追踪 或 在 removedFiles 中）
+                boolean isStaged = stage.getAddedFiles().containsKey(fileName);
+                boolean isTracked = head.getTrackedFiles().containsKey(fileName)
+                        && !stage.getRemovedFiles().contains(fileName);
+                if (!isStaged && !isTracked) {
+                    untrackedFiles.add(fileName);
+                }
+            }
+        }
+
+        // 排序并打印第 5 区块
+        Collections.sort(untrackedFiles);
+        for (String fileName : untrackedFiles) {
+            System.out.println(fileName);
+        }
+        System.out.println();
+    }
+
     // ==================== Helper Methods ====================
 
     /**

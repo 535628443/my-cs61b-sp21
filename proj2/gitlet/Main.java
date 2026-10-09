@@ -36,13 +36,17 @@ public class Main {
                 validateNumArgs(args, 1);
                 Repository.log();
                 break;
-            case "globalLog":
+            case "global-log":
                 validateNumArgs(args, 1);
                 Repository.globalLog();
                 break;
             case "find":
                 validateNumArgs(args, 2);
                 Repository.find(args[1]);
+                break;
+            case "status":
+                validateNumArgs(args, 1);
+                Repository.status();
                 break;
             default:
                 System.out.println("No command with that name exists.");
