@@ -57,13 +57,7 @@ public class Repository {
     public static final File STAGING_FILE = Utils.join(GITLET_DIR, "staging");
 
     /**
-     * 1. 检查 .gitlet 是否已经存在
-     * 2. 创建所有目录
-     * 3. 创建 initial commit
-     * 4. 保存 initial commit，得到它的 hash
-     * 5. 创建 master branch，并写入 initial commit hash
-     * 6. HEAD 写入 "master"
-     * 7. 创建并保存空 Stage
+     * 初始化 Gitlet 版本控制系统，创建初始提交与 master 分支
      */
     public static void init() {
         if (GITLET_DIR.exists()) {
@@ -90,9 +84,7 @@ public class Repository {
     }
 
     /**
-     *
-     * @param fileName 找working dir 的文件 (不存在就报错)
-     *
+     * 将工作区文件添加到暂存区（生成 Blob 并暂存）
      */
     public static void add(String fileName) {
         File file = Utils.join(CWD, fileName);
@@ -131,13 +123,7 @@ public class Repository {
     }
 
     /**
-     *
-     * @param message 1. 检查 message 是否为空，检查暂存区是否有变更
-     *                2. 获取当前 HEAD Commit，克隆一份当前追踪文件表副本
-     *                3. 用暂存区数据更新副本（应用增加与删除）
-     *                4. 创建并保存新的 Commit 对象（parent 指向原 HEAD）
-     *                5. 更新当前分支文件指针指向新 Commit
-     *                6. 清空并保存暂存区
+     * 保存当前暂存区的文件快照，创建新 Commit 并推进当前分支
      */
     public static void commit(String message) {
         if (message == null || message.trim().isEmpty()) {
@@ -179,17 +165,7 @@ public class Repository {
     }
 
     /**
-     *
-     * @param fileName
-     *
-     * 1. 读取当前 Stage 和 HEAD Commit
-     * 2. 检查文件是否既未暂存（addedFiles 中没有）且未被当前 HEAD 追踪（trackedFiles 中没有）
-     *    - 若两者皆否，打印 "No reason to remove the file." 并退出
-     * 3. 若文件已在 addedFiles 中，将其从 addedFiles 移除（取消暂存）
-     * 4. 若文件被当前 HEAD 追踪：
-     *    - 将文件加入 removedFiles 标记为待删除
-     *    - 若工作目录中存在该文件，将其从工作目录中删除（使用 Utils.restrictedDelete）
-     * 5. 保存 Stage
+     * 取消暂存文件；若已被当前 Commit 追踪则标记删除并从工作区移除
      */
     public static void rm (String fileName) {
         // 处理暂存区的文件
@@ -220,7 +196,7 @@ public class Repository {
     }
 
     /**
-     * 往前依次打印出所有的 Commit
+     * 从当前 HEAD 开始沿父节点链回溯并打印提交历史
      */
     public static void log() {
         String commitId = getHeadCommitId();
@@ -234,7 +210,7 @@ public class Repository {
     }
 
     /**
-     * 依次打印出所有的 Commit
+     * 打印历史上创建过的所有 Commit，顺序不限
      */
     public static void globalLog() {
         List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
@@ -245,6 +221,9 @@ public class Repository {
         }
     }
 
+    /**
+     * 查找并打印所有具有指定提交信息的 Commit ID
+     */
     public static void find(String message) {
         List<String> commitIds = Utils.plainFilenamesIn(COMMITS_DIR);
         boolean found = false;
@@ -263,6 +242,9 @@ public class Repository {
         }
     }
 
+    /**
+     * 显示当前分支、暂存文件、标记删除文件、未暂存修改及未追踪文件
+     */
     public static void status() {
         // 1. Branches
         List<String> branches = Utils.plainFilenamesIn(HEADS_DIR);
@@ -340,7 +322,7 @@ public class Repository {
             }
         }
 
-        // 排序并打印第 4 区块
+        // 排序并打印 Modifications Not Staged For Commit
         List<String> sortedModified = new ArrayList<>(modifiedNotStaged.keySet());
         Collections.sort(sortedModified);
         for (String fileName : sortedModified) {
@@ -376,14 +358,14 @@ public class Repository {
     // ==================== Helper Methods ====================
 
     /**
-     * 获取当前 HEAD 所指向的分支名称（例如 "master"）。
+     * 获取当前 HEAD 所指向的分支名称（例如 "master"）
      */
     private static String getCurrentBranch() {
         return Utils.readContentsAsString(HEAD_FILE);
     }
 
     /**
-     * 获取当前分支 HEAD 提交的 SHA-1 哈希值。
+     * 获取当前分支 HEAD 提交的 SHA-1 哈希值
      */
     private static String getHeadCommitId() {
         String branch = getCurrentBranch();
@@ -399,7 +381,7 @@ public class Repository {
     }
 
     /**
-     * 按规则打印出 Commit
+     * 按标准格式打印单个 Commit 的信息
      */
     private static void printCommit(Commit commit, String commitId) {
         System.out.println("===");
