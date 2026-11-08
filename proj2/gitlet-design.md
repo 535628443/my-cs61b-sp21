@@ -288,15 +288,15 @@ CWD/
  │       ├── refs/
  │       │     └── heads/
  │       │           ├── master
- │       │           └── dev
+ │       │           └── dev 
  │       │
  │       └── objects/
  │               ├── commits/
- │               │       ├── <commit-sha1>
+ │               │       ├── commitId
  │               │       └── ...
  │               │
  │               └── blobs/
- │                     ├── <blob-sha1>
+ │                     ├── blobId
  │                     └── ...
  │
  ├── file1
