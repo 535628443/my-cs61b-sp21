@@ -65,7 +65,8 @@ public class Repository {
      */
     public static void init() {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system "
+                    + "already exists in the current directory.");
             return;
         }
 
@@ -250,24 +251,34 @@ public class Repository {
      * 显示当前分支、暂存文件、标记删除文件、未暂存修改及未追踪文件
      */
     public static void status() {
-        // 1. Branches
-        List<String> branches = Utils.plainFilenamesIn(HEADS_DIR);
         String currentBranch = getCurrentBranch();
+        Stage stage = Stage.load();
+        Commit head = getHeadCommit();
 
+        printBranches(currentBranch);
+        printStagedFiles(stage);
+        printRemovedFiles(stage);
+        printModificationsNotStaged(head, stage);
+        printUntrackedFiles(head, stage);
+    }
+
+    private static void printBranches(String currentBranch) {
+        List<String> branches = Utils.plainFilenamesIn(HEADS_DIR);
         System.out.println("=== Branches ===");
-
-        for (String branch : branches) {
-            if (branch.equals(currentBranch)) {
-                System.out.println("*" + branch);
-            } else {
-                System.out.println(branch);
+        if (branches != null) {
+            Collections.sort(branches);
+            for (String branch : branches) {
+                if (branch.equals(currentBranch)) {
+                    System.out.println("*" + branch);
+                } else {
+                    System.out.println(branch);
+                }
             }
         }
         System.out.println();
+    }
 
-        // 2. Staged Area(新增 / 修改)
-        Stage stage = Stage.load();
-
+    private static void printStagedFiles(Stage stage) {
         System.out.println("=== Staged Files ===");
         List<String> stagedFiles = new ArrayList<>(stage.getAddedFiles().keySet());
         Collections.sort(stagedFiles);
@@ -275,8 +286,9 @@ public class Repository {
             System.out.println(fileName);
         }
         System.out.println();
+    }
 
-        // 3. Removed Area
+    private static void printRemovedFiles(Stage stage) {
         System.out.println("=== Removed Files ===");
         List<String> removedFiles = new ArrayList<>(stage.getRemovedFiles());
         Collections.sort(removedFiles);
@@ -284,64 +296,57 @@ public class Repository {
             System.out.println(fileName);
         }
         System.out.println();
+    }
 
-        // 4. 文件修改后还未被 add / rm
+    private static void printModificationsNotStaged(Commit head, Stage stage) {
         System.out.println("=== Modifications Not Staged For Commit ===");
-        Commit head = getHeadCommit();
         Map<String, String> modifiedNotStaged = new HashMap<>();
 
-        // 4.1 HEAD 追踪但 workingDir 修改
         for (String fileName : head.getTrackedFiles().keySet()) {
             File file = Utils.join(CWD, fileName);
             String headHash = head.getTrackedFiles().get(fileName);
 
             if (file.exists()) {
                 String fileHash = Utils.sha1(Utils.readContents(file));
-                // 本地修改，但没有 add
                 if (!fileHash.equals(headHash) && !stage.getAddedFiles().containsKey(fileName)) {
                     modifiedNotStaged.put(fileName, "(modified)");
                 }
             } else {
-                // 本地被删除了，但没有执行过 rm
                 if (!stage.getRemovedFiles().contains(fileName)) {
                     modifiedNotStaged.put(fileName, "(deleted)");
                 }
             }
         }
 
-        // 4.2 检查暂存区 addedFiles 中的文件
         for (String fileName : stage.getAddedFiles().keySet()) {
             File file = Utils.join(CWD, fileName);
             String stageHash = stage.getAddedFiles().get(fileName);
 
             if (file.exists()) {
                 String fileHash = Utils.sha1(Utils.readContents(file));
-                // 暂存后，本地又改动了
                 if (!fileHash.equals(stageHash)) {
                     modifiedNotStaged.put(fileName, "(modified)");
                 }
             } else {
-                // 暂存后，本地被删除了
                 modifiedNotStaged.put(fileName, "(deleted)");
             }
         }
 
-        // 排序并打印 Modifications Not Staged For Commit
         List<String> sortedModified = new ArrayList<>(modifiedNotStaged.keySet());
         Collections.sort(sortedModified);
         for (String fileName : sortedModified) {
             System.out.println(fileName + " " + modifiedNotStaged.get(fileName));
         }
         System.out.println();
+    }
 
-        // 5. Untracked Files
+    private static void printUntrackedFiles(Commit head, Stage stage) {
         System.out.println("=== Untracked Files ===");
         List<String> workingFiles = Utils.plainFilenamesIn(CWD);
         List<String> untrackedFiles = new ArrayList<>();
 
         if (workingFiles != null) {
             for (String fileName : workingFiles) {
-                // 未追踪条件：不在 addedFiles 中，并且（不在 HEAD 追踪 或 在 removedFiles 中）
                 boolean isStaged = stage.getAddedFiles().containsKey(fileName);
                 boolean isTracked = head.getTrackedFiles().containsKey(fileName)
                         && !stage.getRemovedFiles().contains(fileName);
@@ -351,7 +356,6 @@ public class Repository {
             }
         }
 
-        // 排序并打印第 5 区块
         Collections.sort(untrackedFiles);
         for (String fileName : untrackedFiles) {
             System.out.println(fileName);
@@ -426,7 +430,8 @@ public class Repository {
 
         // 未追踪文件冲突检查
         if (checkUntrackedFiles(targetCommit)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; "
+                    + "delete it, or add and commit it first.");
             return;
         }
 
@@ -442,7 +447,7 @@ public class Repository {
         // 删除工具区有, 但目标分支没有的文件
         for (String fileName : currentHead.getTrackedFiles().keySet()) {
             if (!targetCommit.getTrackedFiles().containsKey(fileName)) {
-                Utils.restrictedDelete(fileName);
+                Utils.restrictedDelete(Utils.join(CWD, fileName));
             }
         }
 
@@ -514,7 +519,8 @@ public class Repository {
 
         // 检查是否有未被追踪的文件
         if (checkUntrackedFiles(targetCommit)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; "
+                    + "delete it, or add and commit it first.");
             return;
         }
 
@@ -550,85 +556,37 @@ public class Repository {
      * @param branchName 要合并进来的目标分支名称
      */
     public static void merge(String branchName) {
-        // ==================== 前置条件检查 ====================
-
-        // 检查暂存区是否清空
         Stage stage = Stage.load();
-        if (!stage.isEmpty()) {
-            System.out.println("You have uncommitted changes.");
-            return;
-        }
-
-        // 检查分支是否存在
         File branchFile = Utils.join(HEADS_DIR, branchName);
-        if (!branchFile.exists()) {
-            System.out.println("A branch with that name does not exist.");
-            return;
-        }
-
-        // 检查合并分支不能为当前分支
         String currentBranch = getCurrentBranch();
-        if (branchName.equals(currentBranch)) {
-            System.out.println("Cannot merge a branch with itself.");
+
+        if (!validateMergePreconditions(branchName, stage, branchFile, currentBranch)) {
             return;
         }
 
-        // ==================== 三方合并检查 ====================
-
-        // 找到三方的 commitId
         String currentCommitId = getHeadCommitId();
         String otherCommitId = Utils.readContentsAsString(branchFile);
         String splitCommitId = findSplitPoint(currentCommitId, otherCommitId);
 
-        // 读出三方的 Commit 对象
         Commit currentCommit = Commit.fromFile(currentCommitId);
         Commit otherCommit = Commit.fromFile(otherCommitId);
         Commit splitCommit = Commit.fromFile(splitCommitId);
 
-        // ==================== 特殊(两个分支处于同一直线)分支的拓扑判断 ====================
-
-        // 当 master 领先于 other 分支 (无需合并)
         if (splitCommitId.equals(otherCommitId)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
-
-        // 当 master 落后于 other 分支 (快进合并 fast-forward)
         if (splitCommitId.equals(currentCommitId)) {
             checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
             return;
         }
 
-        // ==================== 分支合并冲突 (不同分叉对同一代码段都有改动) ====================
-        /* s = split; c = current; g = given(目标分支)
-                       当前文件在三方的哈希：s, c, g
-                            │
-                      c.equals(g) ?
-                     /             \
-                   是               否
-                   │                │
-            两边结果完全一样           │
-            （改得一样或都没动）        ▼
-             不用做任何操作           c.equals(s) ?
-                                   /            \
-                                 是              否
-                                 │               │
-                          当前分支没改过            ▼
-                          直接采纳目标分支         g.equals(s) ?
-                          （更新工作区并暂存）     /             \
-                                              是               否
-                                              │                │
-                                          目标分支没改过      两边都改了，
-                                          保留当前分支内容    且改得不一样！
-                                          不用做任何操作）        │
-                                                               ▼
-                                                           【触发 CONFLICT】
-         */
 
         // 防止合并后没有被 tracked 的文件会被覆盖
         if (checkUntrackedFiles(otherCommit)) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way; "
+                    + "delete it, or add and commit it first.");
             return;
         }
 
@@ -638,9 +596,40 @@ public class Repository {
         allFiles.addAll(currentCommit.getTrackedFiles().keySet());
         allFiles.addAll(otherCommit.getTrackedFiles().keySet());
 
+        boolean conflictOccurred = processMergeFiles(allFiles, splitCommit,
+                currentCommit, otherCommit, stage);
+
+        createMergeCommit(branchName, currentBranch, currentCommitId,
+                otherCommitId, stage);
+
+        // 如果发生过冲突，打印提示
+        if (conflictOccurred) {
+            System.out.println("Encountered a merge conflict.");
+        }
+    }
+
+    private static boolean validateMergePreconditions(String branchName, Stage stage,
+                                                      File branchFile, String currentBranch) {
+        if (!stage.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            return false;
+        }
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            return false;
+        }
+        if (branchName.equals(currentBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean processMergeFiles(Set<String> allFiles, Commit splitCommit,
+                                             Commit currentCommit, Commit otherCommit,
+                                             Stage stage) {
         boolean conflictOccurred = false;
 
-        // 进行三方的分支比较
         for (String fileName : allFiles) {
             String s = splitCommit.getTrackedFiles().get(fileName);
             String c = currentCommit.getTrackedFiles().get(fileName);
@@ -651,71 +640,62 @@ public class Repository {
             // 1. 当前和目标相同
             if (Objects.equals(c, g)) {
                 continue;
-            }
-
-            // 2. 当前改动, 目标不变
-            else if (Objects.equals(g, s)) {
+            } else if (Objects.equals(g, s)) {
+                // 2. 当前改动, 目标不变
                 continue;
-            }
-
-            // 3. 目标改动, 当前不变
-            else if (Objects.equals(c, s)) {
-                // 对方修改了或者新增了该文件 -> 采用对方版本
+            } else if (Objects.equals(c, s)) {
+                // 3. 目标改动, 当前不变
                 if (g != null) {
-                    // 从 BLOBS_DIR 读取 g 的内容写进工作区
                     File blobFile = Utils.join(BLOBS_DIR, g);
                     byte[] contents = Utils.readContents(blobFile);
                     Utils.writeContents(targetFile, contents);
-
-                    // 放入暂存区
                     stage.stageForAddition(fileName, g);
-
                 } else {
-                    // 对方把这个文件删除了 -> 跟随对方删除
                     Utils.restrictedDelete(targetFile);
                     stage.stageForRemoval(fileName);
                 }
-            }
-
-            // 4. 当前和目标均改动
-            else {
+            } else {
+                // 4. 当前和目标均改动
                 conflictOccurred = true;
-
-                // 获取当前分支的内容（如果被删除了就是空字符串 ""）
-                String cContent = "";
-                if (c != null) {
-                    File cBlob = Utils.join(BLOBS_DIR, c);
-                    cContent = Utils.readContentsAsString(cBlob);
-                }
-
-                // 获取目标分支的内容（如果被删除了就是空字符串 ""）
-                String gContent = "";
-                if (g != null) {
-                    File gBlob = Utils.join(BLOBS_DIR, g);
-                    gContent = Utils.readContentsAsString(gBlob);
-                }
-
-                // 按照标准格式拼接冲突内容
-                String conflictText = "<<<<<<< HEAD\n"
-                        + cContent
-                        + "=======\n"
-                        + gContent
-                        + ">>>>>>>\n";
-
-                // 写回工作区
-                Utils.writeContents(targetFile, conflictText);
-
-                // 生成新 blob 并暂存（stage）
-                String blobId = Utils.sha1(conflictText);
-                File blobFile = Utils.join(BLOBS_DIR, blobId);
-                if (!blobFile.exists()) {
-                    Utils.writeContents(blobFile, conflictText);
-                }
-                stage.stageForAddition(fileName, blobId);
+                handleMergeConflict(fileName, c, g, targetFile, stage);
             }
         }
+        return conflictOccurred;
+    }
 
-        // 创建并保存 Merge Commit
+    private static void handleMergeConflict(String fileName, String c, String g,
+                                            File targetFile, Stage stage) {
+        String cContent = "";
+        if (c != null) {
+            File cBlob = Utils.join(BLOBS_DIR, c);
+            cContent = Utils.readContentsAsString(cBlob);
+        }
+
+        String gContent = "";
+        if (g != null) {
+            File gBlob = Utils.join(BLOBS_DIR, g);
+            gContent = Utils.readContentsAsString(gBlob);
+        }
+
+        String conflictText = "<<<<<<< HEAD\n"
+                + cContent
+                + "=======\n"
+                + gContent
+                + ">>>>>>>\n";
+
+        Utils.writeContents(targetFile, conflictText);
+
+        String blobId = Utils.sha1(conflictText);
+        File blobFile = Utils.join(BLOBS_DIR, blobId);
+        if (!blobFile.exists()) {
+            Utils.writeContents(blobFile, conflictText);
+        }
+        stage.stageForAddition(fileName, blobId);
+    }
+
+    private static void createMergeCommit(String branchName, String currentBranch,
+                                          String currentCommitId, String otherCommitId,
+                                          Stage stage) {
         String message = "Merged " + branchName + " into " + currentBranch + ".";
         Commit head = getHeadCommit();
         Map<String, String> newTrackedFiles = new HashMap<>(head.getTrackedFiles());
@@ -726,20 +706,14 @@ public class Repository {
             newTrackedFiles.remove(file);
         }
 
-        // 合并后会在当前 HEAD 后新生成一个 commit
-        Commit mergeCommit = new Commit(message, new Date(), currentCommitId, otherCommitId, newTrackedFiles);
+        Commit mergeCommit = new Commit(message, new Date(),
+                currentCommitId, otherCommitId, newTrackedFiles);
         String mergeCommitId = mergeCommit.save();
 
-        // 更新当前分支指针并清空暂存区
         File branchFileCurrent = Utils.join(HEADS_DIR, currentBranch);
-        Utils.writeContents(branchFileCurrent, mergeCommitId); // 当前分支文件 HEADS_DIR/currentBranch
+        Utils.writeContents(branchFileCurrent, mergeCommitId);
         stage.clear();
         stage.save();
-
-        // 如果发生过冲突，打印提示
-        if (conflictOccurred) {
-            System.out.println("Encountered a merge conflict.");
-        }
     }
 
 
@@ -867,11 +841,11 @@ public class Repository {
             String currId = currQueue.poll();
             Commit curr = Commit.fromFile(currId);
 
-            if (curr.getParent() != null) {
+            if (curr.getParent() != null && !currAncestors.contains(curr.getParent())) {
                 currQueue.add(curr.getParent());
                 currAncestors.add(curr.getParent());
             }
-            if (curr.getSecondParent() != null) {
+            if (curr.getSecondParent() != null && !currAncestors.contains(curr.getSecondParent())) {
                 currQueue.add(curr.getSecondParent());
                 currAncestors.add(curr.getSecondParent());
             }
