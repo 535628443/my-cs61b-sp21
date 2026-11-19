@@ -59,6 +59,7 @@ public class Repository {
 
     public static final File HEAD_FILE = Utils.join(GITLET_DIR, "HEAD");
     public static final File STAGING_FILE = Utils.join(GITLET_DIR, "staging");
+    public static final File REMOTES_DIR = Utils.join(GITLET_DIR, "remotes");
 
     /**
      * 初始化 Gitlet 版本控制系统，创建初始提交与 master 分支
@@ -716,6 +717,77 @@ public class Repository {
         stage.save();
     }
 
+    /**
+     * 添加远程仓库配置
+     */
+    public static void addRemote(String remoteName, String remotePath) {
+        // 确保目录存在
+        if (!REMOTES_DIR.exists()) {
+            REMOTES_DIR.mkdirs();
+        }
+
+        // 定位 remote 对应文件
+        File remoteFile = Utils.join(REMOTES_DIR, remoteName);
+
+        // 如果已经添加过同名 remote，报错并返回
+        if (remoteFile.exists()) {
+            System.out.println("A remote with that name already exists.");
+            return;
+        }
+
+        // 跨平台兼容：将 '/' 统一替换为当前操作系统的路径分隔符（Windows 为 '\'，Mac 为 '/'）
+        String normalizedPath = remotePath.replace('/', File.separatorChar);
+
+        // 路径写入文件
+        Utils.writeContents(remoteFile, normalizedPath);
+    }
+
+    /**
+     * 删除远程仓库配置
+     */
+    public static void rmRemote(String remoteName) {
+        File remoteFile = Utils.join(REMOTES_DIR, remoteName);
+
+        if (!remoteFile.exists()) {
+            System.out.println("A remote with that name does not exist.");
+            return;
+        }
+
+        remoteFile.delete();
+    }
+
+    /**
+     * 推送当前分支提交至远程仓库
+     */
+    public static void push(String remoteName, String remoteBranchName) {
+        // TODO: Andy to implement
+    }
+
+    /**
+     * 从远程仓库拉取分支
+     */
+    public static void fetch(String remoteName, String remoteBranchName) {
+        // 1. 前置校验：校验远程目录和分支，并获取远端 HEAD commit id
+        String remoteHeadId = checkAndGetRemoteHead(remoteName, remoteBranchName);
+        if (remoteHeadId == null) {
+            return;
+        }
+
+        // 2. 拷贝历史：把远端的所有 commits 和 blobs 同步到本地
+        File remoteDir = new File(getRemotePath(remoteName));
+        copyCommitsAndBlobsFromRemote(remoteDir, remoteHeadId);
+
+        // 3. 更新本地跟踪分支指针（如 refs/heads/R1/master）
+        updateTrackingBranch(remoteName, remoteBranchName, remoteHeadId);
+    }
+
+
+    /**
+     * 拉取并合并远程分支
+     */
+    public static void pull(String remoteName, String remoteBranchName) {
+        // TODO: Andy to implement
+    }
 
     // ==================== Helper Methods ====================
 
@@ -886,7 +958,93 @@ public class Repository {
         }
         return null;
     }
+
+    /**
+     * 获取指定远程仓库的目录路径（若不存在则返回 null）
+     */
+    private static String getRemotePath(String remoteName) {
+        File remoteFile = Utils.join(REMOTES_DIR, remoteName);
+        if (!remoteFile.exists()) {
+            return null;
+        }
+        return Utils.readContentsAsString(remoteFile);
+    }
+
+    /**
+     * 校验远程仓库及分支，并获取远端 HEAD 提交 ID。
+     */
+    private static String checkAndGetRemoteHead(String remoteName, String branchName) {
+        String remotePath = getRemotePath(remoteName);
+        if (remotePath == null || !(new File(remotePath)).exists()) {
+            System.out.println("Remote directory not found.");
+            return null;
+        }
+        File remoteBranchFile = Utils.join(new File(remotePath), "refs", "heads", branchName);
+        if (!remoteBranchFile.exists()) {
+            System.out.println("That remote does not have that branch.");
+            return null;
+        }
+        return Utils.readContentsAsString(remoteBranchFile);
+    }
+
+    /**
+     * 从远程仓库拉取指定提交及其历史上的 commits 和 blobs。
+     */
+    private static void copyCommitsAndBlobsFromRemote(File remoteDir, String startCommitId) {
+        File remoteCommitsDir = Utils.join(remoteDir, "objects", "commits");
+        File remoteBlobsDir = Utils.join(remoteDir, "objects", "blobs");
+
+        Queue<String> queue = new ArrayDeque<>();
+        queue.add(startCommitId);
+
+        // 通过 BFS 遍历整个系统上的 commits 和 blobs 以确保 remote 和 local 同步
+        while (!queue.isEmpty()) {
+            String commitId = queue.poll();
+            File localCommitFile = Utils.join(COMMITS_DIR, commitId);
+
+            // 如果本地已经有这个 commit 了，说明该 commit 及其祖先都已经在本地了，跳过
+            if (localCommitFile.exists()) {
+                continue;
+            }
+
+            // 复制 commit 到本地
+            File remoteCommitFile = Utils.join(remoteCommitsDir, commitId);
+            Utils.writeContents(localCommitFile, Utils.readContents(remoteCommitFile));
+            Commit commit = Utils.readObject(localCommitFile, Commit.class);
+
+            // 复制 commit 里的所有 blob 到本地
+            for (String blobId : commit.getTrackedFiles().values()) {
+                File localBlob = Utils.join(BLOBS_DIR, blobId);
+                File remoteBlob = Utils.join(remoteBlobsDir, blobId);
+                if (!localBlob.exists() && remoteBlob.exists()) {
+                    Utils.writeContents(localBlob, Utils.readContents(remoteBlob));
+                }
+            }
+
+            // 把当前 commit 的父节点加入队列
+            if (commit.getParent() != null) {
+                queue.add(commit.getParent());
+            }
+            if (commit.getSecondParent() != null) {
+                queue.add(commit.getSecondParent());
+            }
+        }
+    }
+
+    /**
+     * 更新或创建本地跟踪分支指针。
+     */
+    private static void updateTrackingBranch(String remoteName, String branchName,
+                                             String commitId) {
+        File branchFile = Utils.join(HEADS_DIR, remoteName, branchName);
+        File parentDir = branchFile.getParentFile();
+        if (!parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+        Utils.writeContents(branchFile, commitId);
+    }
 }
+
 
 
 // ==================== Temporal Testing ====================

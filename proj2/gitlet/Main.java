@@ -57,19 +57,7 @@ public class Main {
                 break;
             case "checkout":
                 validateInitialized();
-                if (args.length == 3 && args[1].equals("--")) {
-                    // 形如: checkout -- [file name]
-                    Repository.checkout(args[2]);
-                } else if (args.length == 4 && args[2].equals("--")) {
-                    // 形如: checkout [commit id] -- [file name]
-                    Repository.checkout(args[1], args[3]);
-                } else if (args.length == 2) {
-                    // 形如: checkout [branch name]
-                    Repository.checkoutBranch(args[1]);
-                } else {
-                    System.out.println("Incorrect operands.");
-                    System.exit(0);
-                }
+                handleCheckout(args);
                 break;
             case "branch":
                 validateInitialized();
@@ -92,8 +80,49 @@ public class Main {
                 Repository.merge(args[1]);
                 break;
             default:
+                handleRemote(firstArg, args);
+        }
+    }
+
+    private static void handleRemote(String cmd, String[] args) {
+        validateInitialized();
+        switch (cmd) {
+            case "add-remote":
+                validateNumArgs(args, 3);
+                Repository.addRemote(args[1], args[2]);
+                break;
+            case "rm-remote":
+                validateNumArgs(args, 2);
+                Repository.rmRemote(args[1]);
+                break;
+            case "push":
+                validateNumArgs(args, 3);
+                Repository.push(args[1], args[2]);
+                break;
+            case "fetch":
+                validateNumArgs(args, 3);
+                Repository.fetch(args[1], args[2]);
+                break;
+            case "pull":
+                validateNumArgs(args, 3);
+                Repository.pull(args[1], args[2]);
+                break;
+            default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
+        }
+    }
+
+    private static void handleCheckout(String[] args) {
+        if (args.length == 3 && args[1].equals("--")) {
+            Repository.checkout(args[2]);
+        } else if (args.length == 4 && args[2].equals("--")) {
+            Repository.checkout(args[1], args[3]);
+        } else if (args.length == 2) {
+            Repository.checkoutBranch(args[1]);
+        } else {
+            System.out.println("Incorrect operands.");
+            System.exit(0);
         }
     }
 

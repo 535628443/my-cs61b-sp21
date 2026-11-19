@@ -272,6 +272,11 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
    - `public static void globalLog()`
    - `public static void find(String message)`
    - `public static void status()`
+   - `public static void addRemote(String remoteName, String remotePath)`
+   - `public static void rmRemote(String remoteName)`
+   - `public static void push(String remoteName, String remoteBranchName)`
+   - `public static void fetch(String remoteName, String remoteBranchName)`
+   - `public static void pull(String remoteName, String remoteBranchName)`
 
 ### Main
    - `private static void validateNumArgs(String[] args, int i)`
@@ -280,26 +285,41 @@ Gitlet 的入口, 解析命令行参数, 检查操作数语法, 委托命令给 
 ## Persistence
 
 ```
-CWD/
- ├── .gitlet/
- │       ├── HEAD
- │       ├── staging
- │       │
- │       ├── refs/
- │       │     └── heads/
- │       │           ├── master
- │       │           └── dev 
- │       │
- │       └── objects/
- │               ├── commits/
- │               │       ├── commitId
- │               │       └── ...
- │               │
- │               └── blobs/
- │                     ├── blobId
- │                     └── ...
+Root/ (测试根目录，同时容纳模拟的远程仓库与本地仓库)
  │
- ├── file1
- ├── file2
- └── ......(Working Dir 的其他文件)
+ ├── D1/                               # 【远程仓库】(模拟远端 GitHub / 别人的仓库)
+ │    ├── .gitlet/
+ │    │    ├── HEAD                    # 指向 master
+ │    │    ├── refs/heads/
+ │    │    │    └── master             # D1 的 master 分支最新 commitId
+ │    │    └── objects/
+ │    │         ├── commits/           # D1 上的所有 Commit 对象
+ │    │         └── blobs/             # D1 上的所有 Blob 文件内容
+ │    └── (D1 工作区文件)
+ │
+ └── D2/                               # 【本地仓库】(当前用户操作的 CWD)
+      ├── .gitlet/
+      │    ├── HEAD                    # 文本文件：记录当前所在分支名（如 "master"）
+      │    ├── staging                 # 序列化文件：暂存区对象（包含 addedFiles 和 removedFiles）
+      │    │
+      │    ├── remotes/                # 【远程配置目录】(add-remote / rm-remote 维护)
+      │    │    └── R1                 # 文本文件：内容为 "../D1/.gitlet" (指向隔壁 D1)
+      │    │
+      │    ├── refs/heads/             # 【分支指针目录】
+      │    │    ├── master             # 文本文件：本地 master 最新 Commit 的 SHA-1
+      │    │    ├── dev                # 文本文件：本地 dev 最新 Commit 的 SHA-1
+      │    │    └── R1/                # 【远程跟踪分支目录】(fetch 时从 D1 拉取生成)
+      │    │         └── master        # 文本文件：记录 D1 上 master 分支的最新 Commit SHA-1
+      │    │
+      │    └── objects/                # 【本地对象库】(本地创建 + 从 D1 拷贝过来的对象共享此池)
+      │         ├── commits/
+      │         │    ├── <commitId>    # 包含本地 commit 和从 D1 拉取过来的 commit
+      │         │    └── ...
+      │         └── blobs/
+      │              ├── <blobId>      # 包含本地 blob 和从 D1 拉取过来的 blob
+      │              └── ...
+      │
+      ├── file1                        # D2 工作区文件
+      ├── file2
+      └── ......
 ```
