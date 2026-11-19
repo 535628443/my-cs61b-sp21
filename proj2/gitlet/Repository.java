@@ -760,7 +760,36 @@ public class Repository {
      * 推送当前分支提交至远程仓库
      */
     public static void push(String remoteName, String remoteBranchName) {
-        // TODO: Andy to implement
+        // 检查远程目录是否存在
+        String remotePath = getRemotePath(remoteName);
+        if (remotePath == null || !(new File(remotePath)).exists()) {
+            System.out.println("Remote directory not found.");
+            return;
+        }
+
+        // 检查快进条件 (remoteHead 必须是 localHead 的祖先)
+        File remoteDir = new File(remotePath);
+        File remoteBranchFile = Utils.join(remoteDir, "refs", "heads", remoteBranchName);
+        String localHeadId = getHeadCommitId();
+
+
+        if (remoteBranchFile.exists()) {
+            String remoteHeadId = Utils.readContentsAsString(remoteBranchFile);
+            if (!isHistoryAncestor(localHeadId, remoteHeadId)) {
+                System.out.println("Please pull down remote changes before pushing.");
+                return;
+            }
+        }
+
+        // 3. 将本地比远端多出的 commits 和 blobs 推送到远端
+        copyCommitsAndBlobsToRemote(remoteDir, localHeadId);
+
+        // 4. 更新远端的分支指针
+        File parentDir = remoteBranchFile.getParentFile();
+        if (!parentDir.exists()) {
+            parentDir.mkdirs();
+        }
+        Utils.writeContents(remoteBranchFile, localHeadId);
     }
 
     /**
@@ -786,7 +815,13 @@ public class Repository {
      * 拉取并合并远程分支
      */
     public static void pull(String remoteName, String remoteBranchName) {
-        // TODO: Andy to implement
+        String remoteHeadId = checkAndGetRemoteHead(remoteName, remoteBranchName);
+        if (remoteHeadId == null) {
+            return;
+        }
+
+        fetch(remoteName, remoteBranchName);
+        merge(remoteName + "/" + remoteBranchName);
     }
 
     // ==================== Helper Methods ====================
@@ -1042,6 +1077,76 @@ public class Repository {
             parentDir.mkdirs();
         }
         Utils.writeContents(branchFile, commitId);
+    }
+
+    /**
+     * 将本地从指定 commit 开始的历史 commits 和 blobs 拷贝到远程仓库。
+     */
+    private static void copyCommitsAndBlobsToRemote(File remoteDir, String startCommitId) {
+        File remoteCommitsDir = Utils.join(remoteDir, "objects", "commits");
+        File remoteBlobsDir = Utils.join(remoteDir, "objects", "blobs");
+
+        Queue<String> queue = new ArrayDeque<>();
+        queue.add(startCommitId);
+
+        while (!queue.isEmpty()) {
+            String commitId = queue.poll();
+            File remoteCommitFile = Utils.join(remoteCommitsDir, commitId);
+
+            if (remoteCommitFile.exists()) {
+                continue;
+            }
+
+            // 同步 commit
+            File localCommitFile = Utils.join(COMMITS_DIR, commitId);
+            Utils.writeContents(remoteCommitFile, Utils.readContents(localCommitFile));
+            Commit commit = Commit.fromFile(commitId);
+
+            // 同步该 commit 下的所有 blob
+            for (String blobId : commit.getTrackedFiles().values()) {
+                File localBlob = Utils.join(BLOBS_DIR, blobId);
+                File remoteBlob = Utils.join(remoteBlobsDir, blobId);
+
+                if (!remoteBlob.exists() && localBlob.exists()) {
+                    Utils.writeContents(remoteBlob, Utils.readContents(localBlob));
+                }
+            }
+
+            // 把父提交加入队列继续同步
+            if (commit.getParent() != null) {
+                queue.add(commit.getParent());
+            }
+            if (commit.getSecondParent() != null) {
+                queue.add(commit.getSecondParent());
+            }
+        }
+    }
+
+    /**
+     * 检查 targetCommitId 是否是 startCommitId 的祖先（沿着 parent 链可达）。
+     */
+    private static boolean isHistoryAncestor(String startCommitId, String targetCommitId) {
+        Queue<String> queue = new ArrayDeque<>();
+        Set<String> visited = new HashSet<>();
+        queue.add(startCommitId);
+        visited.add(startCommitId);
+
+        while (!queue.isEmpty()) {
+            String commitId = queue.poll();
+            if (commitId.equals(targetCommitId)) {
+                return true;
+            }
+            Commit commit = Commit.fromFile(commitId);
+            if (commit.getParent() != null && !visited.contains(commit.getParent())) {
+                visited.add(commit.getParent());
+                queue.add(commit.getParent());
+            }
+            if (commit.getSecondParent() != null && !visited.contains(commit.getSecondParent())) {
+                visited.add(commit.getSecondParent());
+                queue.add(commit.getSecondParent());
+            }
+        }
+        return false;
     }
 }
 
